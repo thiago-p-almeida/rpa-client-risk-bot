@@ -1,13 +1,13 @@
--- Tabela de Cadastro (Dados Mestres)
+-- Master Data Table
 CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
     client_id VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL, -- Aumentado para 255 por segurança
+    name VARCHAR(255) NOT NULL, 
     email VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de Transações (Histórico de Risco)
+-- Transaction Table (Risk History)
 CREATE TABLE IF NOT EXISTS client_risk_processing (
     id SERIAL PRIMARY KEY,
     client_id VARCHAR(50) NOT NULL,
@@ -23,5 +23,5 @@ CREATE TABLE IF NOT EXISTS client_risk_processing (
         ON DELETE CASCADE
 );
 
--- Index para performance nas buscas do Robô
+-- Index for Robot search performance
 CREATE INDEX IF NOT EXISTS idx_clients_search ON clients(client_id);
