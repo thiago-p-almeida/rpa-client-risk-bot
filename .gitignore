@@ -143,6 +143,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.DS_Store
+
 
 # Spyder project settings
 .spyderproject
@@ -208,3 +210,27 @@ __marimo__/
 
 # Project specific
 api/venv/
+
+# Exports
+*.xlsx
+
+# ==========================================
+# RPA & API Project Specifics
+# ==========================================
+
+# Ignora todos os ambientes virtuais em qualquer subpasta
+**/venv/
+**/env/
+
+# Ignora os arquivos de Log, mas mantém a pasta 'logs' visível se houver um .gitkeep
+logs/*.log
+
+# Ignora os relatórios Excel gerados, mas mantém a pasta 'exports' visível
+exports/*.xlsx
+
+# Ignora credenciais ou configs locais que possuam senhas (muito importante!)
+api/config.py
+# NOTA: No GitHub, você subirá um 'api/config.py.example' sem a senha real.
+
+# Permitir arquivos .gitkeep (para manter pastas vazias no repositório)
+!**/ .gitkeep

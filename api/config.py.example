@@ -1,0 +1,7 @@
+DB_CONFIG = {
+    "host": "localhost",
+    "database": "db_risk_bot",
+    "user": "seu_usuario",
+    "password": "sua_senha_aqui",
+    "port": "5432"
+}
