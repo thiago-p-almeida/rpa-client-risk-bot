@@ -1,7 +1,17 @@
+# DB_CONFIG para rodar localhost
 DB_CONFIG = {
     "host": "localhost",
     "database": "db_risk_bot",
     "user": "seu_usuario",
     "password": "sua_senha_aqui",
     "port": "5432"
+}
+
+# DB_CONFIG para rodar no Supabase
+DB_CONFIG = {
+    "host": "aws-1-us-east-1.pooler.supabase.com", # O host do Pooler
+    "database": "nome do seu banco aqui",
+    "user": "seu user aqui",
+    "password": "sua senha aqui",
+    "port": "6543" # Use a porta do Pooler
 }
