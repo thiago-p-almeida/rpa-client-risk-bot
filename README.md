@@ -35,4 +35,4 @@ Ecossistema completo de análise de risco de crédito, integrando um **Robô RPA
 OBS: Renomeie o arquivo api/config.py.example para api/config.py e insira suas credenciais locais.
 
 ---
-Desenvolvido por **Thiago Almeida**
+Desenvolvido por **Thiago P. Almeida**

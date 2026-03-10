@@ -49,8 +49,13 @@ with st.sidebar:
         st.rerun()
     
     st.divider()
-    st.info("Este dashboard consome dados diretamente do Supabase PostgreSQL.")
+    st.info("Este dashboard consome dados em tempo realdiretamente do Supabase PostgreSQL.")
 
+    st.divider()
+    st.info("Projeto desenvolvido por Thiago P. Almeida | Data Analyst Specialist")
+    st.info("LinkedIn: https://www.linkedin.com/in/thiago-p-almeida/")
+    st.info("Email: thiagoalmeida.tia@gmail.com")
+    
 # Carregamento dos dados
 df = load_data()
 
