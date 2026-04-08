@@ -1,25 +1,28 @@
 # tools/generate_mock_data.py
 import pandas as pd
 import os
+import time
 
 def generate_excel_batch(num_records=500):
-    """Gera uma planilha Excel com dados fictícios para teste de carga do RPA."""
+    """Gera uma planilha Excel com dados fictícios e IDs únicos para teste de carga."""
     
-    # Garante que a pasta de input exista
     input_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'input'))
     os.makedirs(input_dir, exist_ok=True)
     
-    # Gera os dados
+    # Cria um prefixo único baseado no relógio do computador (Timestamp)
+    # Exemplo: 1712590000
+    batch_id = int(time.time()) 
+    
     data = {
-        'client_id':[f'C-{str(i).zfill(4)}' for i in range(100, 100 + num_records)],
-        'name':[f'Cliente Teste {i}' for i in range(100, 100 + num_records)],
-        'email':[f'cliente{i}@empresa.com' for i in range(100, 100 + num_records)]
+        # Gera IDs no formato: C-1712590000-001
+        'client_id':[f'C-{batch_id}-{str(i).zfill(3)}' for i in range(num_records)],
+        'name':[f'Cliente Teste {batch_id}-{i}' for i in range(num_records)],
+        'email':[f'cliente{i}_{batch_id}@empresa.com' for i in range(num_records)]
     }
     
     df = pd.DataFrame(data)
     
-    # Salva o arquivo
-    file_path = os.path.join(input_dir, 'lote_clientes_01.xlsx')
+    file_path = os.path.join(input_dir, f'lote_{batch_id}.xlsx')
     df.to_excel(file_path, index=False, engine='openpyxl')
     
     print(f"✅ Arquivo gerado com sucesso: {file_path}")
