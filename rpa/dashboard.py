@@ -10,15 +10,28 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- CONEXÃO SEGURA COM SUPABASE ---
-# No ambiente local, você pode substituir pela sua string temporariamente.
-# Na nuvem (Streamlit Cloud), usaremos o Secrets Manager.
+# --- CONEXÃO SEGURA COM SUPABASE (ENTERPRISE GRADE) ---
 try:
-    # Formato esperado: postgresql://user:password@host:port/dbname
+    # 1. Captura a URI dos Secrets
     DB_URI = st.secrets["connections"]["postgresql"]["url"]
-    engine = create_engine(DB_URI)
-except Exception:
-    st.error("⚠️ Configuração de banco de dados não encontrada. Verifique os Secrets.")
+    
+    # 2. Correção de dialeto (SQLAlchemy 1.4+ exige 'postgresql://' e não 'postgres://')
+    if DB_URI.startswith("postgres://"):
+        DB_URI = DB_URI.replace("postgres://", "postgresql://", 1)
+
+    # 3. Criação do Engine com Pool de Conexões Resiliente
+    engine = create_engine(
+        DB_URI,
+        pool_size=5,          # Mantém até 5 conexões abertas (evita sobrecarga no Supabase)
+        max_overflow=10,      # Permite até 10 conexões extras em picos de acesso
+        pool_pre_ping=True,   # Verifica se a conexão está viva antes de executar a query
+        pool_recycle=3600     # Recicla conexões a cada 1 hora para evitar timeouts silenciosos
+    )
+except KeyError:
+    st.error("⚠️ Configuração de banco de dados não encontrada. Verifique os Secrets do Streamlit.")
+    st.stop()
+except Exception as e:
+    st.error(f"🚨 Erro crítico ao inicializar o banco de dados: {str(e)}")
     st.stop()
 
 # --- FUNÇÕES DE DADOS ---
