@@ -101,5 +101,5 @@ def risk_score():
             conn.close()
 
 if __name__ == "__main__":
-    logger.info("Iniciando Automated Client Risk API na porta 5000...")
-    app.run(debug=True, port=5000)
+    logger.info("Iniciando Automated Client Risk API na porta 5050...")
+    app.run(debug=True, port=5050)

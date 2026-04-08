@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 # 3. VARIÁVEIS GLOBAIS
 # ==============================================================================
 # URL da nossa API local que atua como o "Motor de Decisão de Risco"
-API_URL = "http://127.0.0.1:5000/risk-score"
+API_URL = "http://127.0.0.1:5050/risk-score"
 
 # ==============================================================================
 # 4. FUNÇÃO PRINCIPAL (CORE DO ROBÔ)
