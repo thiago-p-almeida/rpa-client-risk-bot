@@ -234,3 +234,6 @@ api/config.py
 
 # Permitir arquivos .gitkeep (para manter pastas vazias no repositório)
 !**/ .gitkeep
+
+# bd connection secrets
+.streamlit/secrets.toml
