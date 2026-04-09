@@ -1,25 +1,22 @@
 import os
-import random
 import logging
 import psycopg2
 from flask import Flask, request, jsonify
 from datetime import datetime
 from config import DB_CONFIG
 
-# --- CONFIGURAÇÃO DE LOGS PROFISSIONAIS ---
-# Define o caminho da pasta de logs (sobe um nível para a raiz do projeto)
+# ==============================================================================
+# 1. CONFIGURAÇÃO DE LOGS E AMBIENTE
+# ==============================================================================
 LOG_DIR = os.path.join(os.path.dirname(__file__), '..', 'logs')
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-
-LOG_FILE = os.path.join(LOG_DIR, 'api.log')
+os.makedirs(LOG_DIR, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler() # Saída no terminal
+        logging.FileHandler(os.path.join(LOG_DIR, 'api.log')),
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
@@ -27,79 +24,128 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 def get_connection():
-    """Cria uma nova conexão com o banco de dados PostgreSQL."""
     return psycopg2.connect(**DB_CONFIG)
 
+# ==============================================================================
+# 2. MOTOR DE REGRAS DE COMPLIANCE (GOVTECH)
+# ==============================================================================
+def calculate_compliance_score(vendor_data):
+    """
+    Analisa os dados públicos da empresa e retorna um Score (0-1000) e uma Decisão.
+    Regras baseadas em Compliance B2G (Business-to-Government).
+    """
+    score = 1000
+    reasons =[]
+
+    # Regra 1: Status na Receita Federal (Fator Eliminatório)
+    status = str(vendor_data.get('descricao_situacao_cadastral', '')).upper()
+    if status != 'ATIVA':
+        return 0, 'Rejected', f"CNPJ Inativo/Baixado (Status: {status})"
+
+    # Regra 2: Idade da Empresa (Prevenção contra Empresas de Fachada)
+    data_inicio = vendor_data.get('data_inicio_atividade')
+    if data_inicio:
+        try:
+            # Formato da Brasil API: YYYY-MM-DD
+            abertura = datetime.strptime(data_inicio, '%Y-%m-%d')
+            idade_anos = (datetime.now() - abertura).days / 365
+            if idade_anos < 1:
+                score -= 500
+                reasons.append("Empresa com menos de 1 ano de abertura")
+            elif idade_anos < 3:
+                score -= 200
+                reasons.append("Empresa jovem (menos de 3 anos)")
+        except Exception:
+            pass
+
+    # Regra 3: Capital Social (Capacidade Econômico-Financeira)
+    capital = vendor_data.get('capital_social', 0)
+    if capital == 0:
+        score -= 300
+        reasons.append("Capital Social zerado ou não informado")
+    elif capital < 50000:
+        score -= 100
+        reasons.append("Capital Social baixo (< R$ 50k)")
+
+    # Árvore de Decisão Final
+    if score >= 800:
+        decision = 'Approved'
+    elif score >= 500:
+        decision = 'Manual Review'
+    else:
+        decision = 'Rejected'
+
+    reason_str = " | ".join(reasons) if reasons else "Apto para contratação"
+    return score, decision, reason_str
+
+# ==============================================================================
+# 3. ENDPOINTS DA API
+# ==============================================================================
 @app.route("/", methods=["GET"])
 def health_check():
-    return jsonify({
-        "service": "Automated Client Risk API",
-        "status": "online",
-        "timestamp": datetime.now().isoformat()
-    }), 200
+    return jsonify({"service": "GovTech Compliance API", "status": "online"}), 200
 
 @app.route("/risk-score", methods=["POST"])
 def risk_score():
-    """Processa o score de risco e registra no banco."""
+    """Recebe o dossiê da empresa, calcula o risco e grava a trilha de auditoria."""
     data = request.get_json()
 
-    if not data or "client_id" not in data:
-        logger.warning("Tentativa de acesso sem client_id na requisição.")
-        return jsonify({"status": "error", "message": "client_id is required"}), 400
+    if not data or "cnpj" not in data:
+        return jsonify({"status": "error", "message": "CNPJ is required"}), 400
 
-    client_id = data["client_id"]
-    score = random.randint(300, 850)
-    decision = "Approved" if score > 600 else "Manual Review" if score > 400 else "Rejected"
+    cnpj = data["cnpj"]
+    vendor_data = data.get("vendor_data", {}) # Dossiê vindo da Brasil API
+
+    # Passa o dossiê pelo Motor de Regras
+    score, decision, reason = calculate_compliance_score(vendor_data)
 
     conn = None
     try:
         conn = get_connection()
         cur = conn.cursor()
 
-        # 1. Validar existência do cliente
-        cur.execute("SELECT name FROM clients WHERE client_id = %s", (client_id,))
-        client_record = cur.fetchone()
+        # 1. Validar existência do fornecedor
+        cur.execute("SELECT razao_social FROM vendors WHERE cnpj = %s", (cnpj,))
+        vendor_record = cur.fetchone()
         
-        if not client_record:
-            logger.error(f"Falha de processamento: Cliente {client_id} não encontrado no banco.")
-            return jsonify({
-                "status": "error", 
-                "message": f"Client {client_id} not found."
-            }), 404
+        if not vendor_record:
+            return jsonify({"status": "error", "message": f"Vendor {cnpj} not found."}), 404
 
-        client_name = client_record[0]
+        razao_social = vendor_record[0]
 
-        # 2. Registrar transação de risco
+        # 2. Registrar Trilha de Auditoria (Append-Only)
         insert_query = """
-            INSERT INTO client_risk_processing 
-            (client_id, risk_score, decision_status, processing_status, processed_at, processing_attempts)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO compliance_audit_trail 
+            (cnpj, compliance_score, decision_status, processing_status, error_message, processed_at, processing_attempts)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         
         cur.execute(insert_query, (
-            client_id, score, decision, 'Completed', datetime.now(), 1
+            cnpj, score, decision, 'Completed', reason, datetime.now(), 1
         ))
 
         conn.commit()
-        logger.info(f"Sucesso: Risco processado para {client_name} ({client_id}) | Score: {score} | Decisão: {decision}")
+        logger.info(f"✅ Compliance: {razao_social} ({cnpj}) | Score: {score} | Decisão: {decision} | Motivo: {reason}")
 
         return jsonify({
-            "client_id": client_id,
-            "risk_score": score,
+            "cnpj": cnpj,
+            "compliance_score": score,
             "decision": decision,
+            "reason": reason,
             "status": "success"
         }), 200
 
     except Exception as e:
         if conn:
             conn.rollback()
-        logger.critical(f"Erro crítico no banco de dados para o cliente {client_id}: {str(e)}")
+        logger.critical(f"🚨 Erro no banco para o CNPJ {cnpj}: {str(e)}")
         return jsonify({"status": "error", "message": "Internal database error"}), 500
 
     finally:
         if conn:
+            cur.close()
             conn.close()
 
 if __name__ == "__main__":
-    logger.info("Iniciando Automated Client Risk API na porta 5050...")
+    logger.info("Iniciando GovTech Compliance API na porta 5050...")
     app.run(debug=True, port=5050)
