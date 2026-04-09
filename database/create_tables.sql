@@ -1,27 +1,35 @@
--- Habilita extensão para UUID caso decida usar IDs mais seguros no futuro
--- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- ==============================================================================
+-- FASE 1: LIMPEZA DO AMBIENTE (HARD RESET PARA PIVOTAGEM)
+-- ==============================================================================
+DROP TABLE IF EXISTS client_risk_processing CASCADE;
+DROP TABLE IF EXISTS clients CASCADE;
 
--- 1. Tabela Mestra (Cadastro de Clientes)
-CREATE TABLE IF NOT EXISTS clients (
+-- ==============================================================================
+-- FASE 2: CRIAÇÃO DO NOVO SCHEMA GOVTECH (COMPLIANCE & AUDIT)
+-- ==============================================================================
+
+-- 1. Tabela Mestra (Cadastro de Fornecedores / Vendors)
+CREATE TABLE IF NOT EXISTS vendors (
     id SERIAL PRIMARY KEY,
-    client_id VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL, 
-    email VARCHAR(255) NOT NULL,
+    cnpj VARCHAR(14) UNIQUE NOT NULL, -- Apenas números, sem pontuação
+    razao_social VARCHAR(255) NOT NULL, 
+    cnae_principal VARCHAR(50), -- Código da atividade econômica da empresa
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Tabela de Processamento de Risco (Transacional)
-CREATE TABLE IF NOT EXISTS client_risk_processing (
+-- 2. Tabela de Trilha de Auditoria (Append-Only)
+CREATE TABLE IF NOT EXISTS compliance_audit_trail (
     id SERIAL PRIMARY KEY,
-    client_id VARCHAR(50) NOT NULL,
-    risk_score INTEGER CHECK (risk_score >= 0 AND risk_score <= 1000),
+    cnpj VARCHAR(14) NOT NULL,
+    bid_id VARCHAR(100), -- ID da Licitação/Edital (Contexto da análise)
+    compliance_score INTEGER CHECK (compliance_score >= 0 AND compliance_score <= 1000),
     
-    -- Status da Decisão de Negócio
+    -- Status da Decisão do Agente Público / Motor de Regras
     decision_status VARCHAR(50) DEFAULT 'Pending' 
         CHECK (decision_status IN ('Approved', 'Rejected', 'Manual Review', 'Pending')),
     
-    -- Status do Fluxo de Automação
+    -- Status do Fluxo do Robô RPA
     processing_status VARCHAR(50) DEFAULT 'Pending' 
         CHECK (processing_status IN ('Pending', 'Processing', 'Completed', 'Failed')),
     
@@ -30,22 +38,26 @@ CREATE TABLE IF NOT EXISTS client_risk_processing (
     processed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_client
-        FOREIGN KEY (client_id)
-        REFERENCES clients (client_id)
+    CONSTRAINT fk_vendor
+        FOREIGN KEY (cnpj)
+        REFERENCES vendors (cnpj)
         ON DELETE CASCADE
 );
 
--- 3. Índices Estratégicos
--- Acelera a busca de dados do cliente
-CREATE INDEX IF NOT EXISTS idx_clients_client_id ON clients(client_id);
+-- ==============================================================================
+-- FASE 3: ÍNDICES DE ALTA PERFORMANCE
+-- ==============================================================================
+-- Acelera a busca de dados do fornecedor
+CREATE INDEX IF NOT EXISTS idx_vendors_cnpj ON vendors(cnpj);
 
 -- Acelera a fila do Robô (Busca registros que precisam de processamento)
-CREATE INDEX IF NOT EXISTS idx_processing_queue 
-ON client_risk_processing(processing_status, created_at) 
+CREATE INDEX IF NOT EXISTS idx_compliance_queue 
+ON compliance_audit_trail(processing_status, created_at) 
 WHERE processing_status = 'Pending';
 
--- 4. Automação de Timestamps (Trigger)
+-- ==============================================================================
+-- FASE 4: TRIGGERS DE AUDITORIA
+-- ==============================================================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -54,7 +66,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_clients_updated_at
-    BEFORE UPDATE ON clients
+CREATE TRIGGER update_vendors_updated_at
+    BEFORE UPDATE ON vendors
     FOR EACH ROW
     EXECUTE PROCEDURE update_updated_at_column();
