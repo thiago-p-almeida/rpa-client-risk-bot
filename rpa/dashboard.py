@@ -1,131 +1,178 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, text
-import plotly.express as px # Opcional: para gráficos bonitos
+import plotly.express as px
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(
-    page_title="Risk Bot Analytics",
-    page_icon="🤖",
-    layout="wide"
-)
+# ==============================================================================
+# 1. CONFIGURAÇÃO DA PÁGINA E CSS CUSTOMIZADO (ENTERPRISE UI)
+# ==============================================================================
+st.set_page_config(page_title="Risk Bot Analytics", page_icon="🤖", layout="wide")
 
-# --- CONEXÃO SEGURA COM SUPABASE (ENTERPRISE GRADE) ---
+# Injeção de CSS para criar os Cards Sóbrios e Responsivos
+def inject_custom_css():
+    st.markdown("""
+        <style>
+        /* Estilo base do Card */
+        .metric-card {
+            background-color: #262730;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Título do Card */
+        .metric-title {
+            color: #A0AEC0;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        /* Valor do Card */
+        .metric-value {
+            color: #F8FAFC;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0;
+        }
+        /* Cores das Bordas (Paleta Slate & Signal) */
+        .border-blue   { border-left: 6px solid #3B82F6; } /* Pending */
+        .border-green  { border-left: 6px solid #10B981; } /* Approved */
+        .border-yellow { border-left: 6px solid #F59E0B; } /* Manual Review */
+        .border-red    { border-left: 6px solid #EF4444; } /* Rejected */
+        </style>
+    """, unsafe_allow_html=True)
+
+inject_custom_css()
+
+# ==============================================================================
+# 2. CONEXÃO SEGURA COM SUPABASE (RESILIENTE)
+# ==============================================================================
 try:
-    # 1. Captura a URI dos Secrets
     DB_URI = st.secrets["connections"]["postgresql"]["url"]
-    
-    # 2. Correção de dialeto (SQLAlchemy 1.4+ exige 'postgresql://' e não 'postgres://')
     if DB_URI.startswith("postgres://"):
         DB_URI = DB_URI.replace("postgres://", "postgresql://", 1)
 
-    # 3. Criação do Engine com Pool de Conexões Resiliente
     engine = create_engine(
         DB_URI,
-        pool_size=5,          # Mantém até 5 conexões abertas (evita sobrecarga no Supabase)
-        max_overflow=10,      # Permite até 10 conexões extras em picos de acesso
-        pool_pre_ping=True,   # Verifica se a conexão está viva antes de executar a query
-        pool_recycle=3600     # Recicla conexões a cada 1 hora para evitar timeouts silenciosos
+        pool_size=5,
+        max_overflow=10,
+        pool_pre_ping=True,
+        pool_recycle=3600
     )
-except KeyError:
-    st.error("⚠️ Configuração de banco de dados não encontrada. Verifique os Secrets do Streamlit.")
-    st.stop()
 except Exception as e:
     st.error(f"🚨 Erro crítico ao inicializar o banco de dados: {str(e)}")
     st.stop()
 
-# --- FUNÇÕES DE DADOS ---
-@st.cache_data(ttl=60)
+# ==============================================================================
+# 3. EXTRAÇÃO DE DADOS (DATA INTEGRITY & CTE)
+# ==============================================================================
+@st.cache_data(ttl=30) # Cache reduzido para 30s para maior tempo real
 def load_data():
+    """
+    Usa uma CTE para buscar apenas o ÚLTIMO status de cada cliente,
+    eliminando duplicidades geradas pela trilha de auditoria (retries).
+    """
     query = """
+        WITH LatestProcessing AS (
+            SELECT client_id, risk_score, decision_status, processed_at,
+                   ROW_NUMBER() OVER(PARTITION BY client_id ORDER BY processed_at DESC) as rn
+            FROM client_risk_processing
+        )
         SELECT 
+            c.client_id AS "ID",
             c.name AS "Cliente",
-            r.risk_score AS "Score",
-            r.decision_status AS "Decisão",
-            r.processed_at AS "Data"
-        FROM client_risk_processing r
-        JOIN clients c ON r.client_id = c.client_id
-        ORDER BY r.processed_at DESC
+            lp.risk_score AS "Score",
+            COALESCE(lp.decision_status, 'Pending') AS "Decisão",
+            lp.processed_at AS "Data"
+        FROM clients c
+        LEFT JOIN LatestProcessing lp ON c.client_id = lp.client_id AND lp.rn = 1
+        ORDER BY lp.processed_at DESC NULLS LAST;
     """
     with engine.connect() as conn:
         return pd.read_sql(text(query), conn)
 
-@st.cache_data(ttl=60)
-def load_pending_count():
-    """Calcula o tamanho exato da fila de processamento do Robô."""
-    query = """
-        SELECT COUNT(*)
-        FROM clients c
-        LEFT JOIN client_risk_processing crp ON c.client_id = crp.client_id
-        WHERE crp.client_id IS NULL OR crp.processing_status = 'Failed'
-    """
-    with engine.connect() as conn:
-        return conn.execute(text(query)).scalar()
-
-# Carregamento dos dados
-df = load_data()
-pending_count = load_pending_count()
-
-if not df.empty:
-    # 1. Métricas de Topo (Agora com 4 colunas)
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Processado", len(df))
-    m2.metric("⏳ Fila Pendente", pending_count)
-    m3.metric("Média de Score", round(df["Score"].mean(), 1))
-    m4.metric("Última Atualização", df["Data"].iloc[0].strftime("%H:%M:%S"))
-
-# --- INTERFACE DO DASHBOARD ---
+# ==============================================================================
+# 4. INTERFACE DO DASHBOARD (VIEW)
+# ==============================================================================
 st.title("🛡️ Risk Analysis Control Panel")
-st.markdown("Visualização em tempo real do processamento de risco via RPA.")
+st.markdown("Visualização executiva em tempo real do ecossistema de risco.")
 
-# Sidebar para filtros ou ações
 with st.sidebar:
     st.header("⚙️ Controles")
-    if st.button("🔄 Atualizar Dados"):
+    if st.button("🔄 Atualizar Dados", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-    
     st.divider()
-    st.info("Este dashboard consome dados em tempo real diretamente do Supabase PostgreSQL.")
+    st.info("👤 **Autor**: Thiago P. Almeida\n\n🔗 [LinkedIn](https://www.linkedin.com/in/thiago-p-almeida/)")
 
-    st.divider()
-    st.info("👤 **Autor**: Thiago P. Almeida (Data Analyst Specialist)")
-    st.info("🔗 [LinkedIn](https://www.linkedin.com/in/thiago-p-almeida/)")
-    st.info("✉️ [E-mail](mailto:thiagoalmeida.tia@gmail.com)")
-
-# Carregamento dos dados
 df = load_data()
 
 if not df.empty:
-    # 1. Métricas de Topo
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Total Processado", len(df))
-    m2.metric("Média de Score", round(df["Score"].mean(), 1))
-    m3.metric("Última Atualização", df["Data"].iloc[0].strftime("%H:%M:%S"))
+    # --- CÁLCULO DOS KPIS ---
+    count_pending = len(df[df["Decisão"] == "Pending"])
+    count_approved = len(df[df["Decisão"] == "Approved"])
+    count_manual = len(df[df["Decisão"] == "Manual Review"])
+    count_rejected = len(df[df["Decisão"] == "Rejected"])
+
+    # --- RENDERIZAÇÃO DOS CARDS CUSTOMIZADOS ---
+    c1, c2, c3, c4 = st.columns(4)
+    
+    with c1:
+        st.markdown(f"""
+            <div class="metric-card border-blue">
+                <div class="metric-title">⏳ Fila Pendente</div>
+                <div class="metric-value">{count_pending}</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with c2:
+        st.markdown(f"""
+            <div class="metric-card border-green">
+                <div class="metric-title">✅ Aprovados</div>
+                <div class="metric-value">{count_approved}</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with c3:
+        st.markdown(f"""
+            <div class="metric-card border-yellow">
+                <div class="metric-title">⚠️ Revisão Manual</div>
+                <div class="metric-value">{count_manual}</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with c4:
+        st.markdown(f"""
+            <div class="metric-card border-red">
+                <div class="metric-title">❌ Rejeitados</div>
+                <div class="metric-value">{count_rejected}</div>
+            </div>
+        """, unsafe_allow_html=True)
 
     st.divider()
 
-    # 2. Visualização de Dados e Gráfico
+    # --- TABELA E GRÁFICO ---
     col_table, col_chart = st.columns([2, 1])
 
     with col_table:
-        st.subheader("📋 Histórico de Processamento")
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.subheader("📋 Posição Atual dos Clientes")
+        # Mostra a tabela limpa (sem duplicatas)
+        st.dataframe(df, use_container_width=True, hide_index=True, height=400)
 
     with col_chart:
-        st.subheader("📊 Distribuição de Decisões")
-        fig = px.pie(df, names="Decisão", color="Decisão", 
-                     color_discrete_map={'Approved':'green', 'Rejected':'red', 'Manual Review':'orange'})
+        st.subheader("📊 Distribuição Global")
+        # Paleta de cores sincronizada com os cards
+        color_map = {
+            'Pending': '#3B82F6', 
+            'Approved': '#10B981', 
+            'Manual Review': '#F59E0B', 
+            'Rejected': '#EF4444'
+        }
+        fig = px.pie(df, names="Decisão", color="Decisão", color_discrete_map=color_map, hole=0.4)
+        fig.update_layout(margin=dict(t=0, b=0, l=0, r=0), showlegend=True)
         st.plotly_chart(fig, use_container_width=True)
 
-    # 3. Exportação (O valor do RPA)
-    st.divider()
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Baixar Relatório Consolidado (CSV)",
-        data=csv,
-        file_name=f"risk_report_{df['Data'].iloc[0].strftime('%Y%m%d')}.csv",
-        mime="text/csv",
-    )
 else:
     st.warning("Nenhum dado encontrado no banco de dados.")
