@@ -35,7 +35,7 @@ except Exception as e:
     st.stop()
 
 # --- FUNÇÕES DE DADOS ---
-@st.cache_data(ttl=60) # Atualiza o cache a cada 60 segundos
+@st.cache_data(ttl=60)
 def load_data():
     query = """
         SELECT 
@@ -49,6 +49,30 @@ def load_data():
     """
     with engine.connect() as conn:
         return pd.read_sql(text(query), conn)
+
+@st.cache_data(ttl=60)
+def load_pending_count():
+    """Calcula o tamanho exato da fila de processamento do Robô."""
+    query = """
+        SELECT COUNT(*)
+        FROM clients c
+        LEFT JOIN client_risk_processing crp ON c.client_id = crp.client_id
+        WHERE crp.client_id IS NULL OR crp.processing_status = 'Failed'
+    """
+    with engine.connect() as conn:
+        return conn.execute(text(query)).scalar()
+
+# Carregamento dos dados
+df = load_data()
+pending_count = load_pending_count()
+
+if not df.empty:
+    # 1. Métricas de Topo (Agora com 4 colunas)
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Processado", len(df))
+    m2.metric("⏳ Fila Pendente", pending_count)
+    m3.metric("Média de Score", round(df["Score"].mean(), 1))
+    m4.metric("Última Atualização", df["Data"].iloc[0].strftime("%H:%M:%S"))
 
 # --- INTERFACE DO DASHBOARD ---
 st.title("🛡️ Risk Analysis Control Panel")
