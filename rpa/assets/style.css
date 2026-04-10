@@ -1,74 +1,96 @@
 /* Arquivo: rpa/assets/style.css */
 
 /* ==========================================================================
-   ENTERPRISE METRIC CARDS (GOVTECH UI)
+   ENTERPRISE METRIC CARDS (DATADOG / AWS PATTERN)
    ========================================================================== */
 
-/* Estrutura Base do Card */
+/* Estrutura Base do Card (Flat & Minimalist) */
 .metric-card {
-    background-color: #262730;
-    border-radius: 8px;
-    padding: 20px 16px;
+    background-color: #1E293B; /* Fundo Slate escuro e fosco */
+    border: 1px solid #334155; /* Borda de 1px super sutil para delimitar o espaço */
+    border-radius: 6px; /* Cantos levemente arredondados (padrão SaaS) */
+    padding: 20px 24px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     
-    /* Flexbox para garantir altura igual em todos os cards */
+    /* Flexbox para responsividade (Tablet/Desktop) */
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Empurra o título pro topo e o número pra base */
-    height: 100%; /* Força o card a preencher todo o espaço vertical da coluna */
-    min-height: 120px; /* Altura mínima para garantir proporção no Tablet */
+    justify-content: space-between;
+    height: 100%;
+    min-height: 130px;
+    
+    /* Removemos a sombra pesada para um visual mais "Flat" e técnico */
+    box-shadow: none;
+    transition: border-color 0.2s ease;
 }
 
-/* Efeito de Hover (Interatividade Sutil) */
+/* Efeito de Hover (Apenas ilumina a borda, sem pular na tela) */
 .metric-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+    border-color: #475569;
+}
+
+/* Container do Cabeçalho (Status Dot + Título) */
+.metric-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+/* O "Status Dot" (O farol de atenção) */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0; /* Impede que o dot amasse se o título for longo */
 }
 
 /* Título do Indicador (Label) */
 .metric-title {
-    color: #A0AEC0;
+    color: #94A3B8; /* Cinza médio/claro (Slate 400) */
     font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    margin-bottom: 12px; /* Espaço extra abaixo do título */
-    line-height: 1.3; /* Melhora a leitura quando o texto quebra em 2 linhas */
+    line-height: 1.3;
+    margin: 0;
 }
 
 /* Valor Numérico (O Dado Principal) */
 .metric-value {
-    color: #F8FAFC;
-    font-size: 2.2rem;
+    color: #F8FAFC; /* Branco puro (Slate 50) */
+    font-size: 2.5rem; /* Número ligeiramente maior para compensar a falta de cores no card */
     font-weight: 700;
     line-height: 1;
     margin: 0;
-    margin-top: auto; /* Empurra o número para o fundo do card */
+    margin-top: auto;
 }
 
 /* ==========================================================================
-   SINALIZADORES DE STATUS (PALETA SLATE & SIGNAL)
+   CORES SEMÂNTICAS (STATUS DOTS)
    ========================================================================== */
 
 /* Fila Pendente (Azul Institucional) */
-.border-blue { 
-    border-left: 6px solid #3B82F6; 
+.dot-blue { 
+    background-color: #3B82F6; 
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); /* Leve brilho (Glow) */
 }
 
 /* Aprovados / Aptos (Verde Esmeralda) */
-.border-green { 
-    border-left: 6px solid #10B981; 
+.dot-green { 
+    background-color: #10B981; 
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 /* Revisão Manual / Diligência (Amarelo/Âmbar) */
-.border-yellow { 
-    border-left: 6px solid #F59E0B; 
+.dot-yellow { 
+    background-color: #F59E0B; 
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
 }
 
 /* Rejeitados / Inidôneos (Vermelho Alerta) */
-.border-red { 
-    border-left: 6px solid #EF4444; 
+.dot-red { 
+    background-color: #EF4444; 
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }

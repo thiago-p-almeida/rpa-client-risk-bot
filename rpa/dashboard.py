@@ -67,6 +67,7 @@ def load_data():
 # ==============================================================================
 # 4. INTERFACE DO OBSERVATÓRIO (VIEW)
 # ==============================================================================
+# Títulos limpos, sem emojis
 st.title("GovTech Compliance Radar")
 st.markdown("Observatório em tempo real de integridade de fornecedores de licitações públicas (PNCP).")
 
@@ -87,38 +88,50 @@ if not df.empty:
     count_manual = len(df[df["Status"] == "Manual Review"])
     count_rejected = len(df[df["Status"] == "Rejected"])
 
-    # --- RENDERIZAÇÃO DOS CARDS (HTML Limpo) ---
+    # --- RENDERIZAÇÃO DOS CARDS (Datadog Pattern) ---
     c1, c2, c3, c4 = st.columns(4)
     
     with c1:
         st.markdown(f"""
-            <div class="metric-card border-blue">
-                <div class="metric-title">Fila de Auditoria</div>
-                <div class="metric-value">{count_pending}</div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="status-dot dot-blue"></div>
+                    <h3 class="metric-title">Fila de Auditoria</h3>
+                </div>
+                <p class="metric-value">{count_pending}</p>
             </div>
         """, unsafe_allow_html=True)
         
     with c2:
         st.markdown(f"""
-            <div class="metric-card border-green">
-                <div class="metric-title">Fornecedores Aptos</div>
-                <div class="metric-value">{count_approved}</div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="status-dot dot-green"></div>
+                    <h3 class="metric-title">Fornecedores Aptos</h3>
+                </div>
+                <p class="metric-value">{count_approved}</p>
             </div>
         """, unsafe_allow_html=True)
         
     with c3:
         st.markdown(f"""
-            <div class="metric-card border-yellow">
-                <div class="metric-title">Alerta (Diligência)</div>
-                <div class="metric-value">{count_manual}</div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="status-dot dot-yellow"></div>
+                    <h3 class="metric-title">Alerta (Diligência)</h3>
+                </div>
+                <p class="metric-value">{count_manual}</p>
             </div>
         """, unsafe_allow_html=True)
         
     with c4:
         st.markdown(f"""
-            <div class="metric-card border-red">
-                <div class="metric-title">Inidôneos / Risco</div>
-                <div class="metric-value">{count_rejected}</div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="status-dot dot-red"></div>
+                    <h3 class="metric-title">Inidôneos / Risco</h3>
+                </div>
+                <p class="metric-value">{count_rejected}</p>
             </div>
         """, unsafe_allow_html=True)
 
