@@ -6,10 +6,10 @@ import os
 # ==============================================================================
 # 1. CONFIGURAÇÃO DE AMBIENTE E LOGS
 # ==============================================================================
-# Adiciona a pasta atual (rpa) ao path para podermos importar os outros scripts
 sys.path.append(os.path.dirname(__file__))
 
-import ingestion
+# Imports atualizados para o domínio GovTech
+import pncp_ingestion
 import processor
 import report_generator
 import notifier
@@ -29,40 +29,34 @@ logger = logging.getLogger(__name__)
 # 2. FUNÇÃO PRINCIPAL (PIPELINE DE EXECUÇÃO)
 # ==============================================================================
 def run_pipeline():
-    """
-    Orquestra a execução sequencial de todos os módulos do RPA.
-    Atua como o 'Maestro' do processo (Controller Pattern).
-    """
-    logger.info("🤖 Iniciando Pipeline do Risk Bot RPA...")
+    """Orquestra a execução sequencial de todos os módulos do RPA GovTech."""
+    logger.info("🤖 Iniciando Pipeline do GovTech Compliance Bot...")
     start_time = time.time()
 
     try:
-        # Passo 1: Ingestão de Dados (Lê Excel e joga no Banco)
-        logger.info(">>> FASE 1: Ingestão de Dados")
-        ingestion.process_excel_ingestion()
+        # Passo 1: Ingestão de Dados (Lê API do PNCP e joga no Banco)
+        logger.info(">>> FASE 1: Ingestão de Contratos (PNCP)")
+        pncp_ingestion.process_pncp_ingestion()
 
-        # Passo 2: Processamento (Consome a fila e chama a API)
-        logger.info(">>> FASE 2: Processamento de Risco")
-        processor.process_clients_risk()
+        # Passo 2: Processamento (Enriquece com Brasil API e chama Motor de Regras)
+        logger.info(">>> FASE 2: Auditoria de Compliance (Brasil API)")
+        processor.process_compliance_queue()
 
-        # Passo 3: Geração de Relatório (Exporta o Excel)
-        logger.info(">>> FASE 3: Geração de Relatório")
-        report_generator.generate_risk_report()
+        # Passo 3: Geração de Relatório (Exporta o Excel GovTech)
+        logger.info(">>> FASE 3: Geração de Dossiê (Excel)")
+        report_generator.generate_compliance_report()
 
-        # Calcula o tempo total antes de enviar o e-mail
         end_time = time.time()
         execution_time = end_time - start_time
 
-        # Passo 4: Notificação (Envia o e-mail com o anexo e o tempo)
+        # Passo 4: Notificação (Envia o e-mail institucional)
         logger.info(">>> FASE 4: Notificação Executiva")
         notifier.send_summary_email(execution_time_seconds=execution_time)
 
         logger.info(f"🎉 Pipeline concluído com sucesso em {round(execution_time, 2)} segundos!")
 
     except Exception as e:
-        # Se qualquer módulo der um erro fatal não tratado, o orquestrador captura aqui
         logger.critical(f"🚨 FALHA CATASTRÓFICA NO PIPELINE: {str(e)}")
-        # Em um cenário real, aqui poderíamos chamar o notifier para enviar um e-mail de "Pipeline Quebrado"
 
 if __name__ == "__main__":
     run_pipeline()

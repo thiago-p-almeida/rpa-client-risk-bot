@@ -30,22 +30,28 @@ logger = logging.getLogger(__name__)
 # 2. FUNÇÕES AUXILIARES
 # ==============================================================================
 def get_execution_metrics():
-    """Busca no banco de dados o resumo das decisões tomadas hoje."""
+    """Busca no banco de dados o resumo das decisões tomadas hoje (GovTech)."""
     conn = None
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
         
+        # Usamos a CTE para contar apenas o status final de cada CNPJ hoje
         query = """
+            WITH LatestProcessing AS (
+                SELECT decision_status,
+                       ROW_NUMBER() OVER(PARTITION BY cnpj ORDER BY processed_at DESC) as rn
+                FROM compliance_audit_trail
+                WHERE DATE(processed_at) = CURRENT_DATE
+            )
             SELECT decision_status, COUNT(*) 
-            FROM client_risk_processing 
-            WHERE DATE(processed_at) = CURRENT_DATE
+            FROM LatestProcessing 
+            WHERE rn = 1
             GROUP BY decision_status;
         """
         cur.execute(query)
         results = cur.fetchall()
         
-        # Converte a lista de tuplas em um dicionário
         metrics = {row[0]: row[1] for row in results}
         return metrics
     except Exception as e:
@@ -56,16 +62,16 @@ def get_execution_metrics():
             conn.close()
 
 def get_latest_report():
-    """Encontra o arquivo Excel mais recente na pasta exports."""
+    """Encontra o arquivo Excel GovTech mais recente na pasta exports."""
     export_dir = os.path.join(os.path.dirname(__file__), '..', 'exports')
     if not os.path.exists(export_dir):
         return None
         
-    files =[os.path.join(export_dir, f) for f in os.listdir(export_dir) if f.endswith('.xlsx')]
+    # Filtra apenas os relatórios com o novo prefixo
+    files =[os.path.join(export_dir, f) for f in os.listdir(export_dir) if f.startswith('govtech_audit_report') and f.endswith('.xlsx')]
     if not files:
         return None
         
-    # Retorna o arquivo modificado mais recentemente
     latest_file = max(files, key=os.path.getmtime)
     return latest_file
 
@@ -73,8 +79,8 @@ def get_latest_report():
 # 3. FUNÇÃO PRINCIPAL (CORE DO NOTIFIER)
 # ==============================================================================
 def send_summary_email(execution_time_seconds=0):
-    """Monta o e-mail HTML, anexa o relatório e envia via SMTP."""
-    logger.info("📧 Iniciando módulo de notificação...")
+    """Monta o e-mail HTML institucional, anexa o relatório e envia via SMTP."""
+    logger.info("📧 Iniciando módulo de notificação GovTech...")
     
     metrics = get_execution_metrics()
     latest_report = get_latest_report()
@@ -83,36 +89,38 @@ def send_summary_email(execution_time_seconds=0):
         logger.warning("Nenhuma métrica encontrada para hoje. O e-mail não será enviado.")
         return
 
-    # Construção do E-mail HTML (Design Executivo)
     msg = MIMEMultipart()
     msg['From'] = SMTP_CONFIG['sender_email']
     msg['To'] = SMTP_CONFIG['recipient_email']
-    msg['Subject'] = f"📊 Relatório Diário de Risco RPA - {datetime.now().strftime('%d/%m/%Y')}"
+    msg['Subject'] = f"🏛️ Relatório Diário de Auditoria PNCP - {datetime.now().strftime('%d/%m/%Y')}"
 
     html_body = f"""
     <html>
-        <body style="font-family: Arial, sans-serif; color: #333;">
-            <h2>Resumo de Execução - Risk Bot RPA</h2>
-            <p>O processamento diário de risco de clientes foi concluído com sucesso.</p>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; color: #333;">
+            <h2 style="color: #1E293B;">Resumo de Auditoria - GovTech Compliance Bot</h2>
+            <p>A extração e análise de integridade dos fornecedores do PNCP foi concluída com sucesso.</p>
             
-            <h3>Métricas de Hoje:</h3>
-            <ul>
-                <li><b>Aprovados:</b> {metrics.get('Approved', 0)}</li>
-                <li><b>Revisão Manual:</b> {metrics.get('Manual Review', 0)}</li>
-                <li><b>Rejeitados:</b> {metrics.get('Rejected', 0)}</li>
-                <li><b>Falhas de Sistema:</b> {metrics.get('Pending', 0)}</li>
-            </ul>
+            <div style="background-color: #F8FAFC; padding: 15px; border-radius: 5px; border-left: 4px solid #3B82F6;">
+                <h3 style="margin-top: 0;">Métricas do Lote de Hoje:</h3>
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin-bottom: 5px;">✅ <b>Fornecedores Aptos:</b> {metrics.get('Approved', 0)}</li>
+                    <li style="margin-bottom: 5px;">⚠️ <b>Alerta (Diligência Necessária):</b> {metrics.get('Manual Review', 0)}</li>
+                    <li style="margin-bottom: 5px;">❌ <b>Inidôneos / Risco Fiscal:</b> {metrics.get('Rejected', 0)}</li>
+                    <li>⏳ <b>Falhas de Sistema (Fila):</b> {metrics.get('Pending', 0)}</li>
+                </ul>
+            </div>
             
-            <p><b>Tempo total de execução:</b> {round(execution_time_seconds, 2)} segundos.</p>
-            <p>O relatório analítico completo está em anexo.</p>
+            <p><b>Tempo total de execução do pipeline:</b> {round(execution_time_seconds, 2)} segundos.</p>
+            <p>O dossiê analítico completo com os motivos de rejeição está em anexo.</p>
             <br>
-            <p style="font-size: 12px; color: #888;">Este é um e-mail automático gerado pelo RPA Client Risk Bot.</p>
+            <p style="font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 10px;">
+                Este é um e-mail automático gerado pelo sistema de Compliance GovTech. Não responda a este e-mail.
+            </p>
         </body>
     </html>
     """
     msg.attach(MIMEText(html_body, 'html'))
 
-    # Anexando o arquivo Excel
     if latest_report:
         try:
             with open(latest_report, "rb") as attachment:
@@ -128,14 +136,13 @@ def send_summary_email(execution_time_seconds=0):
         except Exception as e:
             logger.error(f"Erro ao anexar arquivo: {e}")
 
-    # Envio via SMTP
     try:
         server = smtplib.SMTP(SMTP_CONFIG['server'], SMTP_CONFIG['port'])
-        server.starttls() # Criptografa a conexão
+        server.starttls()
         server.login(SMTP_CONFIG['sender_email'], SMTP_CONFIG['sender_password'])
         server.send_message(msg)
         server.quit()
-        logger.info(f"✅ E-mail enviado com sucesso para {SMTP_CONFIG['recipient_email']}!")
+        logger.info(f"✅ E-mail institucional enviado com sucesso para {SMTP_CONFIG['recipient_email']}!")
     except Exception as e:
         logger.critical(f"🚨 Falha crítica ao enviar e-mail: {e}")
 
