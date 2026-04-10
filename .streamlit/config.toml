@@ -1,0 +1,27 @@
+# Arquivo: .streamlit/config.toml
+
+[theme]
+# Força o modo escuro corporativo
+base = "dark"
+
+# Cor primária (Usada em botões, sliders e destaques ativos)
+# Um azul "Steel" sóbrio e institucional
+primaryColor = "#3B82F6"
+
+# Cor de fundo principal da página (Dark Slate/Navy)
+backgroundColor = "#0E1117"
+
+# Cor de fundo secundária (Usada na barra lateral e em caixas de input)
+# Um tom ligeiramente mais claro para criar profundidade
+secondaryBackgroundColor = "#1E293B"
+
+# Cor do texto principal (Off-white para não cansar a vista)
+textColor = "#F8FAFC"
+
+# Tipografia limpa e sem serifa (Padrão de sistemas financeiros)
+font = "sans serif"
+
+[client]
+# Remove o menu de hambúrguer padrão do Streamlit e o rodapé "Made with Streamlit"
+# Isso dá uma aparência de "Software Próprio" e não de um script de terceiros
+toolbarMode = "minimal"

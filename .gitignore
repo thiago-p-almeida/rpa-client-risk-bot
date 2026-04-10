@@ -235,8 +235,11 @@ api/config.py
 # Permitir arquivos .gitkeep (para manter pastas vazias no repositório)
 !**/ .gitkeep
 
-# bd connection secrets
-.streamlit/secrets.toml
+# ==========================================
+# REGRAS DA PASTA .STREAMLIT
+# ==========================================
+# 1. Ignora TUDO dentro da pasta .streamlit por padrão
+.streamlit/*
 
-# env variables (cofre de senhas)
-.env
+# 2. MAS permite (exceção) o arquivo de configuração visual
+!.streamlit/config.toml

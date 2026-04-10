@@ -1,0 +1,68 @@
+/* Arquivo: rpa/assets/style.css */
+
+/* ==========================================================================
+   ENTERPRISE METRIC CARDS (GOVTECH UI)
+   ========================================================================== */
+
+/* Estrutura Base do Card */
+.metric-card {
+    background-color: #262730;
+    border-radius: 8px;
+    padding: 20px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Efeito de Hover (Interatividade Sutil) */
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+}
+
+/* Título do Indicador (Label) */
+.metric-title {
+    color: #A0AEC0; /* Cinza claro/azulado para não competir com o valor */
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+/* Valor Numérico (O Dado Principal) */
+.metric-value {
+    color: #F8FAFC; /* Off-white de alto contraste */
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0;
+}
+
+/* ==========================================================================
+   SINALIZADORES DE STATUS (PALETA SLATE & SIGNAL)
+   ========================================================================== */
+
+/* Fila Pendente (Azul Institucional) */
+.border-blue { 
+    border-left: 6px solid #3B82F6; 
+}
+
+/* Aprovados / Aptos (Verde Esmeralda) */
+.border-green { 
+    border-left: 6px solid #10B981; 
+}
+
+/* Revisão Manual / Diligência (Amarelo/Âmbar) */
+.border-yellow { 
+    border-left: 6px solid #F59E0B; 
+}
+
+/* Rejeitados / Inidôneos (Vermelho Alerta) */
+.border-red { 
+    border-left: 6px solid #EF4444; 
+}

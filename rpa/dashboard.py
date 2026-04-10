@@ -2,44 +2,23 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, text
 import plotly.express as px
+import os
 
 # ==============================================================================
-# 1. CONFIGURAÇÃO DA PÁGINA E CSS CUSTOMIZADO (GOVTECH UI)
+# 1. CONFIGURAÇÃO DA PÁGINA E INJEÇÃO DE ASSETS
 # ==============================================================================
-st.set_page_config(page_title="GovTech Compliance Radar", page_icon="🏛️", layout="wide")
+st.set_page_config(page_title="GovTech Compliance Radar", layout="wide")
 
-def inject_custom_css():
-    st.markdown("""
-        <style>
-        .metric-card {
-            background-color: #262730;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .metric-title {
-            color: #A0AEC0;
-            font-size: 14px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .metric-value {
-            color: #F8FAFC;
-            font-size: 32px;
-            font-weight: bold;
-            margin: 0;
-        }
-        .border-blue   { border-left: 6px solid #3B82F6; } /* Pending */
-        .border-green  { border-left: 6px solid #10B981; } /* Approved */
-        .border-yellow { border-left: 6px solid #F59E0B; } /* Manual Review */
-        .border-red    { border-left: 6px solid #EF4444; } /* Rejected */
-        </style>
-    """, unsafe_allow_html=True)
+def load_css():
+    """Lê o arquivo CSS externo e injeta no Streamlit."""
+    css_path = os.path.join(os.path.dirname(__file__), 'assets', 'style.css')
+    try:
+        with open(css_path, 'r') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning("Arquivo de estilos não encontrado. O dashboard usará o tema padrão.")
 
-inject_custom_css()
+load_css()
 
 # ==============================================================================
 # 2. CONEXÃO SEGURA COM SUPABASE
@@ -57,7 +36,7 @@ try:
         pool_recycle=3600
     )
 except Exception as e:
-    st.error(f"🚨 Erro crítico ao inicializar o banco de dados: {str(e)}")
+    st.error(f"Erro crítico ao inicializar o banco de dados: {str(e)}")
     st.stop()
 
 # ==============================================================================
@@ -65,7 +44,6 @@ except Exception as e:
 # ==============================================================================
 @st.cache_data(ttl=30)
 def load_data():
-    """Busca o último status de compliance de cada fornecedor."""
     query = """
         WITH LatestProcessing AS (
             SELECT cnpj, compliance_score, decision_status, processed_at, error_message,
@@ -89,16 +67,16 @@ def load_data():
 # ==============================================================================
 # 4. INTERFACE DO OBSERVATÓRIO (VIEW)
 # ==============================================================================
-st.title("🏛️ GovTech Compliance Radar")
+st.title("GovTech Compliance Radar")
 st.markdown("Observatório em tempo real de integridade de fornecedores de licitações públicas (PNCP).")
 
 with st.sidebar:
-    st.header("⚙️ Controles")
-    if st.button("🔄 Atualizar Radar", use_container_width=True):
+    st.header("Controles")
+    if st.button("Atualizar Radar", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     st.divider()
-    st.info("👤 **Autor**: Thiago P. Almeida\n\n🔗 [LinkedIn](https://www.linkedin.com/in/thiago-p-almeida/)")
+    st.info("**Autor**: Thiago P. Almeida\n\n[LinkedIn](https://www.linkedin.com/in/thiago-p-almeida/)")
 
 df = load_data()
 
@@ -109,13 +87,13 @@ if not df.empty:
     count_manual = len(df[df["Status"] == "Manual Review"])
     count_rejected = len(df[df["Status"] == "Rejected"])
 
-    # --- RENDERIZAÇÃO DOS CARDS ---
+    # --- RENDERIZAÇÃO DOS CARDS (HTML Limpo) ---
     c1, c2, c3, c4 = st.columns(4)
     
     with c1:
         st.markdown(f"""
             <div class="metric-card border-blue">
-                <div class="metric-title">⏳ Fila de Auditoria</div>
+                <div class="metric-title">Fila de Auditoria</div>
                 <div class="metric-value">{count_pending}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -123,7 +101,7 @@ if not df.empty:
     with c2:
         st.markdown(f"""
             <div class="metric-card border-green">
-                <div class="metric-title">✅ Fornecedores Aptos</div>
+                <div class="metric-title">Fornecedores Aptos</div>
                 <div class="metric-value">{count_approved}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -131,7 +109,7 @@ if not df.empty:
     with c3:
         st.markdown(f"""
             <div class="metric-card border-yellow">
-                <div class="metric-title">⚠️ Alerta (Diligência)</div>
+                <div class="metric-title">Alerta (Diligência)</div>
                 <div class="metric-value">{count_manual}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -139,7 +117,7 @@ if not df.empty:
     with c4:
         st.markdown(f"""
             <div class="metric-card border-red">
-                <div class="metric-title">❌ Inidôneos / Risco</div>
+                <div class="metric-title">Inidôneos / Risco</div>
                 <div class="metric-value">{count_rejected}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -150,11 +128,11 @@ if not df.empty:
     col_table, col_chart = st.columns([2, 1])
 
     with col_table:
-        st.subheader("📋 Dossiê de Fornecedores (PNCP)")
+        st.subheader("Dossiê de Fornecedores (PNCP)")
         st.dataframe(df, use_container_width=True, hide_index=True, height=400)
 
     with col_chart:
-        st.subheader("📊 Matriz de Risco")
+        st.subheader("Matriz de Risco")
         color_map = {
             'Pending': '#3B82F6', 
             'Approved': '#10B981', 
