@@ -33,7 +33,7 @@
 /* Container do Cabeçalho (Status Dot + Título) */
 .metric-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Alinha o ponto no topo da primeira linha de texto */
     margin-bottom: 16px;
 }
 
@@ -43,18 +43,26 @@
     height: 10px;
     border-radius: 50%;
     margin-right: 10px;
-    flex-shrink: 0; /* Impede que o dot amasse se o título for longo */
+    margin-top: 4px; /* Desce o ponto levemente para alinhar com o centro da primeira letra */
+    flex-shrink: 0;
 }
 
 /* Título do Indicador (Label) */
 .metric-title {
-    color: #94A3B8; /* Cinza médio/claro (Slate 400) */
-    font-size: 0.85rem;
+    color: #94A3B8;
+    /* Tipografia Fluida: O tamanho da fonte se adapta à largura da tela (Viewport Width - vw), 
+       mas nunca fica menor que 11px ou maior que 14px (clamp) */
+    font-size: clamp(11px, 1.2vw, 14px); 
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     line-height: 1.3;
     margin: 0;
+    
+    /* Prevenção de Quebra de Letras Órfãs */
+    word-break: normal; /* Impede quebrar a palavra no meio */
+    overflow-wrap: break-word; /* Só quebra se a palavra for maior que o card inteiro */
+    hyphens: auto; /* Adiciona hífen se o navegador suportar a quebra silábica */
 }
 
 /* Valor Numérico (O Dado Principal) */
