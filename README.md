@@ -34,10 +34,9 @@ O gargalo operacional encontra-se na **Homologação de Fornecedores**. Agentes 
 ## ⬚ Visão Geral da Interface (Screenshots)
 
 <div align="center">
-  <!-- Substitua os caminhos abaixo pelas suas imagens reais na pasta assets -->
-  <img src="https://github.com/thiago-p-almeida/rpa-client-risk-bot/assets/streamlit_dashboard.png" alt="Observatório Executivo" width="800">
-  <br><br>
-  <img src="https://github.com/thiago-p-almeida/rpa-client-risk-bot/assets/retool_backoffice.png" alt="Painel Backoffice" width="800">
+  <img src="assets/streamlit_dashboard.png" alt="Observatório Executivo" width="800">
+<br><br>
+<img src="assets/retool_backoffice.png" alt="Painel Backoffice" width="800">
 </div>
 
 ---
