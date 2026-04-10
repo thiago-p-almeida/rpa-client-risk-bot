@@ -35,9 +35,9 @@ O gargalo operacional encontra-se na **Homologação de Fornecedores**. Agentes 
 
 <div align="center">
   <!-- Substitua os caminhos abaixo pelas suas imagens reais na pasta assets -->
-  <img src="https://github.com/thiago-p-almeida/rpa-client-risk-bot/blob/main/assets/streamlit_dashboard.png" alt="Observatório Executivo Streamlit" width="800">
+  <img src="https://github.com/thiago-p-almeida/rpa-client-risk-bot/assets/streamlit_dashboard.png" alt="Observatório Executivo" width="800">
   <br><br>
-  <img src="https://github.com/thiago-p-almeida/rpa-client-risk-bot/blob/main/assets/retool_backoffice.png" alt="Painel Backoffice Retool" width="800">
+  <img src="https://github.com/thiago-p-almeida/rpa-client-risk-bot/assets/retool_backoffice.png" alt="Painel Backoffice" width="800">
 </div>
 
 ---
@@ -89,9 +89,9 @@ Este projeto foi desenhado sob os princípios do *Twelve-Factor App*, garantindo
 
 ## § Licença e Direitos Autorais
 
-MIT License
+Other License
 
-Copyright (c) 2026 Thiago P. Almeida. Todos os direitos reservados
+Copyright (c) 2026 Thiago P. Almeida. Todos os direitos reservados.
 
 Este código-fonte é de propriedade exclusiva e confidencial. É estritamente proibida a cópia, reprodução, distribuição, comercialização ou modificação, parcial ou total, sem autorização prévia por escrito..
 
