@@ -24,7 +24,7 @@
 
 <br>
 
-## ❖ O Desafio de Negócio (Business Case)
+## ❖ O Desafio de Negócio (Business Case) 
 Com a vigência da Nova Lei de Licitações (Lei 14.133/2021), o volume de contratações públicas no Brasil atingiu patamares históricos. O Portal Nacional de Contratações Públicas (PNCP) registra milhares de novos editais e contratos mensalmente, movimentando bilhões de reais.
 
 O gargalo operacional encontra-se na **Homologação de Fornecedores**. Agentes públicos e pregoeiros gastam semanas em tarefas manuais repetitivas, cruzando CNPJs em dezenas de portais governamentais para garantir a idoneidade fiscal e jurídica das empresas vencedoras. Esse processo manual é lento, custoso e suscetível a falhas humanas que podem resultar em responsabilização legal grave (Improbidade Administrativa). O **GovTech Compliance Radar** resolve este problema atuando como um investigador digital autônomo, auditável e em tempo real.
