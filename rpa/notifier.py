@@ -30,19 +30,21 @@ logger = logging.getLogger(__name__)
 # 2. FUNÇÕES AUXILIARES
 # ==============================================================================
 def get_execution_metrics():
-    """Busca no banco de dados o resumo das decisões tomadas hoje (GovTech)."""
+    """Busca no banco de dados o resumo das decisões tomadas hoje (Horário de Brasília)."""
     conn = None
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
         
-        # Usamos a CTE para contar apenas o status final de cada CNPJ hoje
+        # Converte o UTC do banco para o fuso horário do Brasil (America/Sao_Paulo)
+        # antes de comparar com a data atual.
         query = """
             WITH LatestProcessing AS (
                 SELECT decision_status,
                        ROW_NUMBER() OVER(PARTITION BY cnpj ORDER BY processed_at DESC) as rn
                 FROM compliance_audit_trail
-                WHERE DATE(processed_at) = CURRENT_DATE
+                WHERE DATE(processed_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') = 
+                      DATE(CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
             )
             SELECT decision_status, COUNT(*) 
             FROM LatestProcessing 
