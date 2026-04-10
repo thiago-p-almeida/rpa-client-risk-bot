@@ -91,17 +91,9 @@ Este projeto foi desenhado sob os princípios do *Twelve-Factor App*, garantindo
 
 MIT License
 
-Copyright (c) 2026 Thiago P. Almeida
+Copyright (c) 2026 Thiago P. Almeida. Todos os direitos reservados
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Este código-fonte é de propriedade exclusiva e confidencial. É estritamente proibida a cópia, reprodução, distribuição, comercialização ou modificação, parcial ou total, sem autorização prévia por escrito..
 
 ---
 <div align="center">
