@@ -33,8 +33,10 @@
 /* Container do Cabeçalho (Status Dot + Título) */
 .metric-header {
     display: flex;
-    align-items: flex-start; /* Alinha o ponto no topo da primeira linha de texto */
+    align-items: center; /* Voltamos para center para manter o ponto alinhado com a única linha de texto */
     margin-bottom: 16px;
+    width: 100%; /* Garante que o cabeçalho ocupe 100% da largura do card */
+    overflow: hidden; /* Esconde qualquer coisa que vazar do cabeçalho */
 }
 
 /* O "Status Dot" (O farol de atenção) */
@@ -43,26 +45,23 @@
     height: 10px;
     border-radius: 50%;
     margin-right: 10px;
-    margin-top: 4px; /* Desce o ponto levemente para alinhar com o centro da primeira letra */
-    flex-shrink: 0;
+    flex-shrink: 0; /* Impede que o ponto seja esmagado pelo texto */
 }
 
 /* Título do Indicador (Label) */
 .metric-title {
     color: #94A3B8;
-    /* Tipografia Fluida: O tamanho da fonte se adapta à largura da tela (Viewport Width - vw), 
-       mas nunca fica menor que 11px ou maior que 14px (clamp) */
-    font-size: clamp(11px, 1.2vw, 14px); 
+    font-size: 13px; /* Tamanho fixo e seguro */
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    line-height: 1.3;
     margin: 0;
     
-    /* Prevenção de Quebra de Letras Órfãs */
-    word-break: normal; /* Impede quebrar a palavra no meio */
-    overflow-wrap: break-word; /* Só quebra se a palavra for maior que o card inteiro */
-    hyphens: auto; /* Adiciona hífen se o navegador suportar a quebra silábica */
+    /* A Mágica do Truncamento (Text Truncation) */
+    white-space: nowrap; /* Força o texto a ficar em uma única linha (nunca quebra pra baixo) */
+    overflow: hidden; /* Esconde o texto que não couber no card */
+    text-overflow: ellipsis; /* Adiciona os "..." no final do texto cortado */
+    flex-grow: 1; /* Permite que o texto ocupe o espaço restante ao lado do ponto */
 }
 
 /* Valor Numérico (O Dado Principal) */
