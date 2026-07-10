@@ -17,7 +17,6 @@
 <br>
 
 <div align="center">
-  <h2>⟡ <a href="">Acessar Observatório Executivo (Em Manuetençao)</a></h2>
   <h2>⟡ <a href="https://thgsolutions.retool.com/apps/f53cabd6-338e-11f1-86de-032cbaeeb67b/Risk%20Approval%20Panel/page1" target="_blank">Acessar Backoffice de Operações (Retool)</a></h2>
   <p><i>O painel de Backoffice requer credenciais de acesso corporativo para simular o ambiente de aprovação Human-in-the-Loop.</i></p>
 </div>
